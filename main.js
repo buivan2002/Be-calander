@@ -2,8 +2,12 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
-app.use(cors());
-app.use(express.json());
+
+app.use(cors({
+  origin: 'https://fe-to-do-list-gamma.vercel.app', // chỉ cho phép domain này
+  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
+  credentials: true, 
+}));app.use(express.json());
 
 // Routes
 const todoRoutes = require('./routes/index');
