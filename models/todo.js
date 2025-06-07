@@ -6,7 +6,9 @@ module.exports = (sequelize, DataTypes) => {
     due_date: DataTypes.DATE,
     is_completed: DataTypes.BOOLEAN
   }, {
-    tableName: 'Todos' // ✅ chỉ rõ tên bảng trong database nếu không trùng
+    tableName: 'Todos', // ✅ chỉ rõ tên bảng trong database nếu không trùng
+    timestamps: false,  // tắt luôn timestamps của Sequelize
+
   });
   return Todo;
 };
