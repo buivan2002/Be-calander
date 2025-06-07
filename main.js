@@ -13,7 +13,6 @@ app.use(cors({
 // Routes
 const todoRoutes = require('./routes/index');
 app.use('/api', todoRoutes);
-const { exec } = require('child_process');
 app.get('/run-migrate', async (req, res) => {
   exec('npx sequelize-cli db:migrate --env production', (err, stdout, stderr) => {
     if (err) {
