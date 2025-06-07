@@ -1,37 +1,47 @@
 'use strict';
-/** @type {import('sequelize-cli').Migration} */
+
 module.exports = {
-  async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('Todos', {
+  up: async (queryInterface, Sequelize) => {
+    await queryInterface.createTable("Todos", {
       id: {
-        allowNull: false,
+        type: Sequelize.INTEGER,
         autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER
+        allowNull: false,
       },
       title: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false,
       },
       description: {
-        type: Sequelize.TEXT
+        type: Sequelize.TEXT,
+        allowNull: true,
       },
       due_date: {
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        allowNull: true,
       },
       is_completed: {
-        type: Sequelize.BOOLEAN
+        type: Sequelize.BOOLEAN,
+        defaultValue: false,
       },
-      createdAt: {
+      created_at: {
         allowNull: false,
-        type: Sequelize.DATE
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
-      updatedAt: {
+      updated_at: {
         allowNull: false,
-        type: Sequelize.DATE
-      }
+        type: Sequelize.DATE,
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
+      },
     });
+
+    // Nếu muốn tự động cập nhật updated_at, bạn phải dùng trigger trong PostgreSQL
+    // nhưng Sequelize không hỗ trợ nó trực tiếp => cập nhật bằng code khi update Todo.
   },
-  async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('Todos');
-  }
+
+  down: async (queryInterface, Sequelize) => {
+    await queryInterface.dropTable("Todos");
+  },
 };

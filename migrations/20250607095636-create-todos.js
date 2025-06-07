@@ -1,4 +1,4 @@
-"use strict";
+'use strict';
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
@@ -28,16 +28,17 @@ module.exports = {
       created_at: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.literal("CURRENT_TIMESTAMP"),
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
       updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
-        defaultValue: Sequelize.literal(
-          "CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"
-        ),
+        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP'),
       },
     });
+
+    // Nếu muốn tự động cập nhật updated_at, bạn phải dùng trigger trong PostgreSQL
+    // nhưng Sequelize không hỗ trợ nó trực tiếp => cập nhật bằng code khi update Todo.
   },
 
   down: async (queryInterface, Sequelize) => {
