@@ -73,12 +73,12 @@ exports.login = async (req, res) => {
     );
 
     // Set cookie (HttpOnly giúp chống XSS)
-      res.cookie("token", token, {
-      httpOnly: true,
-      secure: true,              // BẮT BUỘC nếu sameSite: "None"
-      sameSite: "None",          // Cho phép cookie cross-site
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, {
+    httpOnly: true,
+    secure: true,              // BẮT BUỘC nếu sameSite: "None"
+    sameSite: "None",          // Cho phép cookie cross-site
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  });
 
 
     // Gửi response
