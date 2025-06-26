@@ -1,17 +1,18 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require("cookie-parser");
 
 const app = express();
-
+app.use(express.json());
+app.use(cookieParser());
 app.use(cors({
-  origin: 'https://fe-to-do-list-gamma.vercel.app', // chỉ cho phép domain này
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], 
-  credentials: true, 
-}));app.use(express.json());
+  origin: "http://localhost:3000",
+  credentials: true,               // Cho phép gửi cookie
+}));
 
 // Routes
-const todoRoutes = require('./routes/index');
-app.use('/api', todoRoutes);
+const calanderRoutes = require('./routes/index');
+app.use('/api', calanderRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
