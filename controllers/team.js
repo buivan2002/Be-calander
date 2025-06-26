@@ -57,11 +57,11 @@ exports.getUserTeams = async (req, res) => {
   try {
     const user_id = req.user.id;
     const cacheKey = `user_teams:${user_id}`;
-    const cached = await redis.get(cacheKey);
-    if (cached) {
-      console.log('⚡ Cache hit');
-      return res.json(JSON.parse(cached));
-    }
+    // const cached = await redis.get(cacheKey);
+    // if (cached) {
+    //   console.log('⚡ Cache hit');
+    //   return res.json(JSON.parse(cached));
+    // }
     const userTeams = await UserTeamRole.findAll({
       where: { user_id },
       include: [
@@ -79,7 +79,7 @@ exports.getUserTeams = async (req, res) => {
       roleName: item.Role.dataValues.name,
     }));
 
-    await redis.set(cacheKey, JSON.stringify(data), 'EX', 36000);
+    // await redis.set(cacheKey, JSON.stringify(data), 'EX', 36000);
     console.log('✅ DB queried and cached');
     res.json(data);
   } catch (err) {
