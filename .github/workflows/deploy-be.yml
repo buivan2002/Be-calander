@@ -6,9 +6,6 @@ on:
       - main
       - develop
       - convert/nestjs
-    paths:
-      - '/**'
-      - '.github/workflows/deploy-be.yml'
   
   workflow_dispatch:  # Allow manual trigger
 
