@@ -160,7 +160,7 @@ jobs:
             echo "================================"
             
             # Navigate to deployment directory
-            cd /root/Be-calander || exit 1
+            mkdir -p /root/Be-calander && cd /root/Be-calander
             
             # ========================================
             # 1. Generate .env.production from Secrets
@@ -261,7 +261,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           
           script: |
-            cd ${{ secrets.DEPLOY_PATH }}/Be-calander || exit 1
+            mkdir -p /root/Be-calander && cd /root/Be-calander
             
             echo "================================"
             echo "🔍 Deployment Status Check"
@@ -320,6 +320,6 @@ jobs:
           echo ""
           echo "To rollback manually:"
           echo "1. SSH to VPS: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
-          echo "2. cd ${{ secrets.DEPLOY_PATH }}/Be-calander"
+          echo "2. cd /root/Be-calander"
           echo "3. docker-compose -f docker-compose.prod.yml pull [previous-tag]"
           echo "4. docker-compose -f docker-compose.prod.yml up -d"
