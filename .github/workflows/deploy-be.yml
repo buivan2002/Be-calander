@@ -137,7 +137,7 @@ jobs:
     if: github.event_name == 'push'
     
     environment:
-      name: production-backend
+      name: stagging
 
     steps:
       - name: Checkout code
