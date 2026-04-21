@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # MySQL Database Service
+  # ========================================
+  db:
+    image: mysql:8.0-alpine
+    container_name: calendar_db_prod
+    restart: unless-stopped
+    
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?error}
+      MYSQL_DATABASE: ${DB_NAME:?error}
+      MYSQL_USER: ${DB_USERNAME:?error}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?error}
+    
+    ports:
+      - "3306:3306"
+    
+    volumes:
+      - db_prod_volume:/var/lib/mysql
+    
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    
+    networks:
+      - calendar_prod_network
+    
+    labels:
+      com.project: calendar
+      com.environment: production
+
+  # ========================================
+  # NestJS Backend Service
+  # ========================================
+  backend:
+    image: ${DOCKER_REGISTRY}/calendar-api-backend:${BACKEND_IMAGE_TAG:-latest}
+    container_name: calendar_backend_prod
+    restart: unless-stopped
+    
+    environment:
+      # Node Environment
+      NODE_ENV: production
+      
+      # Server Port
+      PORT: ${BACKEND_PORT:-3100}
+      
+      # Database Configuration
+      DB_HOST: db
+      DB_PORT: ${DB_PORT:-3306}
+      DB_NAME: ${DB_NAME:?error}
+      DB_USERNAME: ${DB_USERNAME:?error}
+      DB_PASSWORD: ${DB_PASSWORD:?error}
+      DB_DIALECT: ${DB_DIALECT:-mysql}
+      
+      # Security & Auth
+      JWT_SECRET: ${JWT_SECRET:?error}
+      
+    ports:
+      - "${BACKEND_PORT:-3100}:${BACKEND_PORT:-3100}"
+    
+    expose:
+      - "${BACKEND_PORT:-3100}"
+    
+    depends_on:
+      db:
+        condition: service_healthy
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-3100}/api/v1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    networks:
+      - calendar_prod_network
+    
+    labels:
+      com.project: calendar
+      com.component: backend
+      com.environment: production

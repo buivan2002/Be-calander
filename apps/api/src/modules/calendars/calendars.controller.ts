@@ -1,29 +1,48 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Patch, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
 import { CalendarsService } from './calendars.service';
 import { CalendarDto } from './dto/calendar.dto';
-import { JwtAuthGuard } from '@app/common';
+import { JwtAuthGuard, RolesGuard, RoleEnum, Roles } from '@app/common';
 
-@Controller('api')
-@UseGuards(JwtAuthGuard)
+@Controller('calendars')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CalendarsController {
   constructor(private readonly calendarsService: CalendarsService) {}
 
-  @Get('getcalendars')
-  findAll() {
-    return this.calendarsService.findAll();
+  @Roles(RoleEnum.ADMIN)
+  @Get('admin')
+  findAllForAdmin() {
+    return this.calendarsService.findAllForAdmin();
   }
 
-  @Post('calendars')
+  @Roles(RoleEnum.USER)
+  @Get('user')
+  findAllForUser(@Request() req) {
+    return this.calendarsService.findAllForUser(req.user.id);
+  }
+
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
+  @Post('')
   create(@Request() req, @Body() calendarDto: CalendarDto) {
-    return this.calendarsService.create(req.user.id, calendarDto);
+    return this.calendarsService.createWithRules(req.user, calendarDto);
   }
 
-  @Put('updatecalendar/:id')
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
+  @Patch(':id/status')
+  updateStatus(
+    @Request() req,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('status') status: string,
+    @Body('file_id') file_id?: number
+  ) {
+    return this.calendarsService.updateStatus(id, req.user, status, file_id);
+  }
+
+  @Put(':id')
   update(@Param('id', ParseIntPipe) id: number, @Body() calendarDto: CalendarDto) {
     return this.calendarsService.update(id, calendarDto);
   }
 
-  @Delete('deletecalendar/:id')
+  @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.calendarsService.remove(id);
   }

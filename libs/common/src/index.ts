@@ -4,4 +4,7 @@ export * from './database/database.module';
 export * from './exceptions/global-exception.filter';
 export * from './guards/jwt-auth.guard';
 export * from './guards/jwt.strategy';
+export * from './guards/roles.guard';
+export * from './decorator/roles.decorator';
 export * from './models';
+export * from './enums/role.enum';

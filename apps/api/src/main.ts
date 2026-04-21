@@ -6,9 +6,7 @@ import { GlobalExceptionFilter } from '@app/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(ApiModule);
-  
   app.use(cookieParser());
-  
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -20,9 +18,11 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://calander-inky.vercel.app'],
+    origin: ['http://localhost:4000', 'https://calander-inky.vercel.app'],
     credentials: true,
   });
+  // main.ts
+  app.setGlobalPrefix('api/v1');
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

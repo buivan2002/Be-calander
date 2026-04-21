@@ -18,7 +18,7 @@ export class AuthService {
     const hashedPassword = await argon2.hash(registerDto.password);
     
     const user = await User.create({
-      name: registerDto.name,
+      name: registerDto.fname,
       email: registerDto.email,
       password: hashedPassword,
       role: 'user',
@@ -29,12 +29,15 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto) {
-    const user = await User.findOne({ where: { email: loginDto.email } });
+    const user = await User.findOne({ 
+      where: { email: loginDto.email },
+      raw: true // <--- "Vũ khí" bí mật ở đây
+    });
     if (!user) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }
-
     const isPasswordValid = await argon2.verify(user.password, loginDto.password);
+
     if (!isPasswordValid) {
       throw new UnauthorizedException('Email hoặc mật khẩu không đúng');
     }

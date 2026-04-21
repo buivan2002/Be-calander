@@ -1,9 +1,16 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { User, Todo, Team, Calendar, Role, UserTeamRole } from '../models';
+import { User, Todo, Team, Calendar, Role, UserTeamRole, FileModel } from '../models';
 import * as dotenv from 'dotenv';
 
-dotenv.config();
+import * as fs from 'fs';
+import * as path from 'path';
+
+const envPath = fs.existsSync(path.resolve(process.cwd(), '.env.development'))
+  ? path.resolve(process.cwd(), '.env.development')
+  : path.resolve(process.cwd(), '.env');
+
+dotenv.config({ path: envPath });
 
 @Module({
   imports: [
@@ -14,7 +21,7 @@ dotenv.config();
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       database: process.env.DB_NAME,
-      models: [User, Todo, Team, Calendar, Role, UserTeamRole],
+      models: [User, Todo, Team, Calendar, Role, UserTeamRole, FileModel],
       autoLoadModels: true,
       synchronize: false, // Dùng schema có sẵn
       logging: false,

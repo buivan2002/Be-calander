@@ -4,7 +4,7 @@ import { CreateTodoDto } from './dto/create-todo.dto';
 import { UpdateTodoDto } from './dto/update-todo.dto';
 import { JwtAuthGuard } from '@app/common';
 
-@Controller('api/todos')
+@Controller('todos')
 @UseGuards(JwtAuthGuard)
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}

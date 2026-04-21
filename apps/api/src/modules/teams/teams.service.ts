@@ -17,20 +17,27 @@ export class TeamsService {
     return { message: 'Tạo nhóm thành công', team };
   }
 
-  async findAll() {
-    return Team.findAll({ include: [User] });
-  }
+async findUserTeams(userId: number) {
+  const user = await User.findByPk(userId, {
+    // KHÔNG dùng raw: true ở đây
+    include: [
+      {
+        model: Team,
+        through: { attributes: ['role_id'] },
+        include: [{
+          model: User,
+          attributes: ['id', 'name', 'email'],
+          through: { attributes: [] }
+        }]
+      },
+    ],
+  });
 
-  async findUserTeams(userId: number) {
-    const user = await User.findByPk(userId, {
-      include: [
-        {
-          model: Team,
-          through: { attributes: [] },
-        },
-      ],
-    });
-    if (!user) throw new NotFoundException('User not found');
-    return user.teams;
-  }
+  if (!user) throw new NotFoundException('User not found');
+
+  // BIẾN THÀNH JSON SẠCH Ở ĐÂY 👇
+  const cleanUser = user.get({ plain: true }); 
+  
+  return cleanUser.teams ?? [];
+}
 }

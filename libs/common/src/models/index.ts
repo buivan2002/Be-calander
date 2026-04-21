@@ -4,3 +4,4 @@ export * from './team.model';
 export * from './calendar.model';
 export * from './role.model';
 export * from './user-team-role.model';
+export * from './file.model';

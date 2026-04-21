@@ -17,11 +17,12 @@ export class CalendarDto {
   @IsNotEmpty()
   end_time: Date;
 
-  @IsString()
-  @IsNotEmpty()
-  status: string;
 
   @IsInt()
   @IsOptional()
   team_id?: number;
+
+  @IsInt()
+  @IsOptional()
+  assigner_id?: number;
 }
