@@ -123,9 +123,7 @@ jobs:
           # Chỉ copy đúng file này
           source: "docker-compose.prod.yml"
           # Sửa thành đường dẫn thật trên VPS của bạn (VD: /root/)
-          target: "/root/"
-          # Bỏ qua cấu trúc thư mục lồng nhau, vứt thẳng file vào target
-          strip_components: 1
+          target: "/root/Be-calander"
   # ========================================
   # Stage 3: Deploy to Production VPS
   # ========================================
