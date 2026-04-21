@@ -193,11 +193,14 @@ jobs:
               exit 1
             fi
             
+            RAW_BRANCH="${{ github.ref_name }}"
+            SAFE_TAG="${RAW_BRANCH//\//-}"
+            export BACKEND_IMAGE_TAG="$SAFE_TAG"
             # ========================================
             # 2. Pull latest image from Docker Hub
             # ========================================
             echo "📥 Pulling latest backend image..."
-            docker pull ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:latest || {
+            docker pull ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG || {
               echo "❌ Failed to pull image"
               exit 1
             }
@@ -208,9 +211,6 @@ jobs:
             echo "🔄 Updating backend service..."
             
             # Export environment variables for docker-compose
-            RAW_BRANCH="${{ github.ref_name }}"
-            SAFE_TAG="${RAW_BRANCH//\//-}"
-            export BACKEND_IMAGE_TAG="$SAFE_TAG"
             export DOCKER_REGISTRY="${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}"
             export BACKEND_PORT="${{ secrets.BACKEND_PORT || '3100' }}"
             
