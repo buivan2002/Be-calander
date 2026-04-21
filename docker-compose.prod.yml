@@ -59,6 +59,9 @@ services:
       # Security & Auth
       JWT_SECRET: ${JWT_SECRET:?error}
       
+    volumes:
+      - ./uploads:/app/uploads
+      
     ports:
       - "${BACKEND_PORT:-3100}:${BACKEND_PORT:-3100}"
     
