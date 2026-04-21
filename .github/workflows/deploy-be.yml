@@ -7,7 +7,7 @@ on:
       - develop
       - convert/nestjs
     paths:
-      - 'Be-calander/**'
+      - '/**'
       - '.github/workflows/deploy-be.yml'
   
   workflow_dispatch:  # Allow manual trigger
