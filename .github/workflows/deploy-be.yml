@@ -38,24 +38,20 @@ jobs:
         with:
           node-version: '18'
           cache: 'npm'
-          cache-dependency-path: 'Be-calander/package-lock.json'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install dependencies
-        working-directory: ./Be-calander
         run: npm ci
 
       - name: Run linter
-        working-directory: ./Be-calander
         run: npm run lint
         continue-on-error: true
 
       - name: Type checking
-        working-directory: ./Be-calander
         run: npx tsc --noEmit
         continue-on-error: true
 
       - name: Run tests
-        working-directory: ./Be-calander
         run: npm run test
         continue-on-error: true
 
@@ -103,7 +99,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v5
         with:
-          context: ./Be-calander
+          context: .
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -125,7 +121,7 @@ jobs:
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
           # Chỉ copy đúng file này
-          source: "Be-calander/docker-compose.prod.yml"
+          source: "docker-compose.prod.yml"
           # Sửa thành đường dẫn thật trên VPS của bạn (VD: /root/)
           target: "/root/"
           # Bỏ qua cấu trúc thư mục lồng nhau, vứt thẳng file vào target
@@ -309,13 +305,13 @@ jobs:
     if: failure()
     
     steps:
-      - name: Slack Notification - Rollback Alert
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          text: '🔴 Backend deployment FAILED - Manual rollback may be needed'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
-        continue-on-error: true
+      # - name: Slack Notification - Rollback Alert
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: failure
+      #     text: '🔴 Backend deployment FAILED - Manual rollback may be needed'
+      #     webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   continue-on-error: true
 
       - name: Manual Rollback Instruction
         run: |
