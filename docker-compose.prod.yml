@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ========================================
@@ -84,3 +83,10 @@ services:
       com.project: calendar
       com.component: backend
       com.environment: production
+
+networks:
+  calendar_prod_network:
+    driver: bridge
+volumes:
+  db_prod_volume:
+    driver: local

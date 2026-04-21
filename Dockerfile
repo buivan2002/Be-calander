@@ -37,7 +37,6 @@ COPY --from=builder /app/dist ./dist
 
 # Copy migration files and scripts
 COPY migrations ./migrations
-COPY scripts ./scripts
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
