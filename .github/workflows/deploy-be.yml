@@ -114,11 +114,9 @@ jobs:
           # Docker layer caching
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
       - name: Image digest
-        run: echo "Image digest: ${{ steps.build.outputs.digest }}"
+        run: echo "Image digest ${{ steps.build.outputs.digest }}"
 
-# THÊM ĐOẠN NÀY ĐỂ COPY FILE COMPOSE TỪ GITHUB LÊN VPS
       - name: Copy docker-compose file to VPS
         uses: appleboy/scp-action@master
         with:
