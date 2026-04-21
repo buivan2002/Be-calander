@@ -62,6 +62,7 @@ jobs:
     name: Build Backend Image
     runs-on: ubuntu-latest
     needs: test-and-lint
+    environment: stagging
     
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
