@@ -4,7 +4,7 @@ services:
   # MySQL Database Service
   # ========================================
   db:
-    image: mysql:8.0-alpine
+    image: mysql:8.0
     container_name: calendar_db_prod
     restart: unless-stopped
     
