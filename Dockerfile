@@ -35,8 +35,9 @@ RUN npm ci --only=production && npm cache clean --force
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Copy migration files and scripts
+# Copy migration files và config cho sequelize-cli
 COPY migrations ./migrations
+COPY sequelize.config.js ./sequelize.config.js
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && adduser -S nestjs -u 1001
