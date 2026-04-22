@@ -1,95 +1,95 @@
+# Be-calander/docker-compose.prod.yml
 
 services:
-  # ========================================
-  # MySQL Database Service
-  # ========================================
   db:
     image: mysql:8.0
     container_name: calendar_db_prod
     restart: unless-stopped
-    
+
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:?error}
       MYSQL_DATABASE: ${DB_NAME:?error}
       MYSQL_USER: ${DB_USERNAME:?error}
       MYSQL_PASSWORD: ${DB_PASSWORD:?error}
-    
-    ports:
-      - "3306:3306"
-    
+
+    # ✅ FIX #1: XÓA ports 3306 — Database KHÔNG BAO GIỜ được lộ ra ngoài
+    # ports:  <-- ĐÃ XÓA
+
     volumes:
       - db_prod_volume:/var/lib/mysql
-    
+
     healthcheck:
+      # ✅ mysqladmin đã dùng 127.0.0.1 — GIỮ NGUYÊN, đúng rồi
       test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
       interval: 10s
       timeout: 5s
       retries: 5
-    
+
     networks:
-      - calendar_prod_network
-    
+      # DB chỉ cần nội bộ, KHÔNG join proxy-network
+      - calendar_internal_network
+
     labels:
       com.project: calendar
       com.environment: production
 
-  # ========================================
-  # NestJS Backend Service
-  # ========================================
   backend:
     image: ${DOCKER_REGISTRY}/calendar-api-backend:${BACKEND_IMAGE_TAG:-latest}
-    container_name: calendar_backend_prod
+    # ✅ FIX #2: container_name PHẢI khớp DNS Nginx dùng: calendar_backend
+    container_name: calendar_backend
+
     restart: unless-stopped
-    
+
     environment:
-      # Node Environment
       NODE_ENV: production
-      
-      # Server Port
       PORT: ${BACKEND_PORT:-3100}
-      
-      # Database Configuration
       DB_HOST: db
       DB_PORT: ${DB_PORT:-3306}
       DB_NAME: ${DB_NAME:?error}
       DB_USERNAME: ${DB_USERNAME:?error}
       DB_PASSWORD: ${DB_PASSWORD:?error}
       DB_DIALECT: ${DB_DIALECT:-mysql}
-      
-      # Security & Auth
       JWT_SECRET: ${JWT_SECRET:?error}
-      
+
     volumes:
       - ./uploads:/app/uploads
-      
-    ports:
-      - "${BACKEND_PORT:-3100}:${BACKEND_PORT:-3100}"
-    
-    expose:
-      - "${BACKEND_PORT:-3100}"
-    
+
+    # ✅ FIX #3: XÓA ports — Nginx gọi qua Docker network, không cần map ra host
+    # ports:  <-- ĐÃ XÓA
+
+    # ✅ FIX #4: XÓA expose — vô nghĩa khi không có ports, network đã lo việc này
+    # expose:  <-- ĐÃ XÓA
+
     depends_on:
       db:
         condition: service_healthy
-    
+
+    # ✅ FIX #5: Dùng 127.0.0.1 thay vì localhost
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${BACKEND_PORT:-3100}/api/v1"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:${BACKEND_PORT:-3100}/api/v1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-    
+
     networks:
-      - calendar_prod_network
-    
+      # BE join CẢ HAI mạng: internal để nói chuyện với DB, proxy để Nginx routing
+      - calendar_internal_network
+      - proxy-network
+
     labels:
       com.project: calendar
       com.component: backend
       com.environment: production
 
 networks:
-  calendar_prod_network:
+  calendar_internal_network:
+    # ✅ Mạng nội bộ BE↔DB, do Compose này tạo và quản lý
     driver: bridge
+  proxy-network:
+    # ✅ Mạng ngoài do Nginx Compose tạo, khai báo external
+    external: true
+
 volumes:
   db_prod_volume:
     driver: local

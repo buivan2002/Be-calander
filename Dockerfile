@@ -44,8 +44,6 @@ RUN mkdir -p /app/uploads && chown -R nestjs:nodejs /app
 
 USER nestjs
 
-# Expose application port
-EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
