@@ -85,6 +85,9 @@ services:
 networks:
   calendar_internal_network:
     # ✅ Mạng nội bộ BE↔DB, do Compose này tạo và quản lý
+    # name: bắt buộc phải có để docker run --network dùng đúng tên này
+    # Không có name → Compose tự prefix thành "be-calander_calendar_internal_network"
+    name: calendar_internal_network
     driver: bridge
   proxy-network:
     # ✅ Mạng ngoài do Nginx Compose tạo, khai báo external
