@@ -243,6 +243,7 @@ jobs:
             echo "🗃️  Running db:migrate..."
             docker run --rm \
               --env-file .env \
+              -e DB_HOST=calendar_db_prod \
               --network calendar_internal_network \
               ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG \
               sh -c "NODE_ENV=production node_modules/.bin/sequelize db:migrate --config sequelize.config.js --migrations-path migrations"
