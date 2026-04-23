@@ -245,7 +245,7 @@ jobs:
               --env-file .env \
               --network calendar_internal_network \
               ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG \
-              sh -c "NODE_ENV=production npx sequelize-cli db:migrate --config sequelize.config.js --migrations-path migrations"
+              sh -c "NODE_ENV=production node_modules/.bin/sequelize db:migrate --config sequelize.config.js --migrations-path migrations"
             echo "✅ Migrations completed"
 
             # ========================================
