@@ -222,18 +222,18 @@ jobs:
             # ========================================
             echo "📋 Checking if DB needs SequelizeMeta historical seeding..."
             # Kiểm tra xem bảng Users đã tồn tại chưa (DB cũ do sync() tạo ra)
-            TABLE_EXISTS=\$(docker exec calendar_db_prod mysql \
-              -u\${{ secrets.DB_USERNAME }} \
-              -p\${{ secrets.DB_PASSWORD }} \
-              \${{ secrets.DB_NAME }} \
-              -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='\${{ secrets.DB_NAME }}' AND table_name='Users';")
+            TABLE_EXISTS=$(docker exec calendar_db_prod mysql \
+              -u${{ secrets.DB_USERNAME }} \
+              -p${{ secrets.DB_PASSWORD }} \
+              ${{ secrets.DB_NAME }} \
+              -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${{ secrets.DB_NAME }}' AND table_name='Users';")
             
-            if [ "\$TABLE_EXISTS" -eq "1" ]; then
+            if [ "$TABLE_EXISTS" -eq "1" ]; then
               echo "⚠️  Found old schema (Users table exists). Seeding SequelizeMeta to skip baselines..."
               docker exec calendar_db_prod mysql \
-                -u\${{ secrets.DB_USERNAME }} \
-                -p\${{ secrets.DB_PASSWORD }} \
-                \${{ secrets.DB_NAME }} \
+                -u${{ secrets.DB_USERNAME }} \
+                -p${{ secrets.DB_PASSWORD }} \
+                ${{ secrets.DB_NAME }} \
                 -e "
                   CREATE TABLE IF NOT EXISTS SequelizeMeta (
                     name VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY
