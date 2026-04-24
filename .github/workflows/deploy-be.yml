@@ -216,40 +216,7 @@ jobs:
             done
 
             # ========================================
-            # 4. Seed SequelizeMeta — CHỈ LÀM 1 LẦN (INSERT IGNORE an toàn mọi lần)
-            # Đây là lịch sử từ trước khi có migration: khai báo 3 file đã "chạy rồi"
-            # Từ deploy tiếp theo trở đi: chỉ cần thêm migration file mới vào code là xong
-            # ========================================
-            echo "📋 Checking if DB needs SequelizeMeta historical seeding..."
-            # Kiểm tra xem bảng Users đã tồn tại chưa (DB cũ do sync() tạo ra)
-            TABLE_EXISTS=$(docker exec calendar_db_prod mysql \
-              -u${{ secrets.DB_USERNAME }} \
-              -p${{ secrets.DB_PASSWORD }} \
-              ${{ secrets.DB_NAME }} \
-              -N -B -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='${{ secrets.DB_NAME }}' AND table_name='Users';")
-            
-            if [ "$TABLE_EXISTS" -eq "1" ]; then
-              echo "⚠️  Found old schema (Users table exists). Seeding SequelizeMeta to skip baselines..."
-              docker exec calendar_db_prod mysql \
-                -u${{ secrets.DB_USERNAME }} \
-                -p${{ secrets.DB_PASSWORD }} \
-                ${{ secrets.DB_NAME }} \
-                -e "
-                  CREATE TABLE IF NOT EXISTS SequelizeMeta (
-                    name VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY
-                  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-                  INSERT IGNORE INTO SequelizeMeta (name) VALUES
-                    ('20260422000000-00-baseline-init.js'),
-                    ('20260416203000-add-file-and-calendar-relation.js'),
-                    ('20260417065153-make-team-id-nullable.js');
-                "
-              echo "✅ SequelizeMeta seeded for legacy DB"
-            else
-              echo "✨ Fresh database detected (No Users table). Skipping manual seed so migrations will create tables."
-            fi
-
-            # ========================================
-            # 5. Chạy migration — MỌI LẦN DEPLOY (tự bỏ qua file đã chạy)
+            # 4. Chạy migration — MỌI LẦN DEPLOY (tự bỏ qua file đã chạy)
             # Khi bạn thêm migration mới vào code → push → CI tự pick up và chạy
             # ========================================
             echo "🗃️  Running db:migrate..."
@@ -262,7 +229,7 @@ jobs:
             echo "✅ Migrations completed"
 
             # ========================================
-            # 6. Start/Restart toàn bộ services
+            # 5. Start/Restart toàn bộ services
             # ========================================
             echo "🚀 Starting all services..."
             docker-compose -f docker-compose.prod.yml down --remove-orphans
@@ -272,7 +239,7 @@ jobs:
             sleep 10
 
             # ========================================
-            # 7. Verify deployment
+            # 6. Verify deployment
             # ========================================
             echo "✅ Verifying services..."
             docker-compose -f docker-compose.prod.yml ps
