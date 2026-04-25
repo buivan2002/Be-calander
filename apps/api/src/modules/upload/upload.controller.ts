@@ -40,8 +40,7 @@ export class UploadController {
   )
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { error: 'No file uploaded' };
-    const baseUrl = process.env.BASE_URL;
-    const fileUrl = `${baseUrl}/uploads/${file.filename}`;
+    const fileUrl = `/uploads/${file.filename}`;
     
     const dbFile = await FileModel.create({
       file_name: file.originalname,
