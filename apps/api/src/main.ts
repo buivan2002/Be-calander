@@ -18,10 +18,14 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   app.enableCors({
-    origin: ['http://localhost:4000', 'https://calander-inky.vercel.app'],
-    credentials: true,
-  });
-  // main.ts
+      origin: [
+        'http://localhost:4000',
+        'https://calendar.qanh.site', // Bắt buộc phải có dòng này để Frontend gọi được API
+        'https://qanh.site'
+      ],
+      credentials: true,
+    });
+    // main.ts
   app.setGlobalPrefix('api/v1');
 
   const port = process.env.PORT || 3001;

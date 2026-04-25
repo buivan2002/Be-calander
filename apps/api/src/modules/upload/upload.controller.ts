@@ -40,11 +40,18 @@ export class UploadController {
   )
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) return { error: 'No file uploaded' };
-    const filePath = `/uploads/${file.filename}`;
+    const baseUrl = process.env.BASE_URL;
+    const fileUrl = `${baseUrl}/uploads/${file.filename}`;
+    
     const dbFile = await FileModel.create({
       file_name: file.originalname,
-      file_path: filePath,
+      file_path: fileUrl, // Lưu URL đầy đủ hoặc tuỳ yêu cầu, nhưng ta trả về url
     } as any);
-    return { file_id: dbFile.id, file_path: filePath };
+
+    return { 
+      file_id: dbFile.id, 
+      file_path: fileUrl,    // Đóng vai trò file_url
+      file_url: fileUrl 
+    };
   }
 }
