@@ -18,12 +18,14 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async login(@Body() loginDto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const result = await this.authService.login(loginDto);
+    const customDomain = process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.qanh.site' : undefined);
     
     res.cookie('token', result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
+      ...(customDomain && { domain: customDomain }),
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -34,7 +36,11 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Res({ passthrough: true }) res: Response) {
-    res.clearCookie('token', { path: '/' });
+    const customDomain = process.env.COOKIE_DOMAIN || (process.env.NODE_ENV === 'production' ? '.qanh.site' : undefined);
+    res.clearCookie('token', { 
+      path: '/',
+      ...(customDomain && { domain: customDomain })
+    });
     return { message: 'Đăng xuất thành công' };
   }
 }
