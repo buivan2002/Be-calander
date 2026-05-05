@@ -44,13 +44,6 @@ Violating any of these rules requires explicit user confirmation before proceedi
 - Inputs **must** be validated through DTOs decorated with `class-validator`. The global `ValidationPipe` handles rejection.
 - Error responses go through `GlobalExceptionFilter`. Do not manually format error JSON in controllers.
 - No `console.log` left in production code paths.
-- "When writing or refactoring NestJS code using Sequelize ORM, you MUST strictly adhere to the following rule regarding Model Instances:
-
-Never return or console.log bloated Sequelize Model instances (containing _previousDataValues, isNewRecord, etc.). ALWAYS strip the ORM metadata to return a plain JSON object.
-
-- For single object retrieval (e.g., findOne, findByPk), append .get({ plain: true }) or .toJSON() before returning or logging.
-- For array retrieval or joined queries (e.g., findAll, include), use raw: true and nest: true directly in the query options.
-- Exception: Keep the Model instance ONLY IF the immediate next step requires calling instance methods like .save(), .update(), or .destroy(). Once the mutation is done, convert it to plain JSON before returning."
 
 ## R6 — Surgical Changes Only
 

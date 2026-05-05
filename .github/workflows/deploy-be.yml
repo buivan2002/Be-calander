@@ -203,13 +203,13 @@ jobs:
               echo "❌ Failed to pull image"
               exit 1
             }
-            docker-compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
 
             # ========================================
             # 4. Khởi động DB trước (backend cần DB để migrate)
             # ========================================
             echo "🗄️  Starting DB service first..."
-            docker-compose -f docker-compose.prod.yml up -d db
+            docker compose -f docker-compose.prod.yml up -d db
 
             echo "⏳ Waiting for DB to be healthy..."
             for i in $(seq 1 30); do
@@ -241,8 +241,8 @@ jobs:
             # 6. Start/Restart toàn bộ services
             # ========================================
             echo "🚀 Starting all services..."
-            docker-compose -f docker-compose.prod.yml down --remove-orphans
-            docker-compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml down --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d
 
             echo "⏳ Waiting for services to stabilize..."
             sleep 10
@@ -251,10 +251,10 @@ jobs:
             # 7. Verify deployment
             # ========================================
             echo "✅ Verifying services..."
-            docker-compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml ps
 
             echo "🔍 Backend health check..."
-            if docker-compose -f docker-compose.prod.yml exec -T backend \
+            if docker compose -f docker-compose.prod.yml exec -T backend \
                 wget -q --spider http://127.0.0.1:${BACKEND_PORT}/api/v1 2>/dev/null; then
               echo "✨ Backend is healthy!"
             else
@@ -262,7 +262,7 @@ jobs:
             fi
 
             echo "📋 Backend logs (last 30 lines):"
-            docker-compose -f docker-compose.prod.yml logs --tail=30 backend
+            docker compose -f docker-compose.prod.yml logs --tail=30 backend
 
             echo ""
             echo "✅ Deployment complete!"
@@ -337,5 +337,5 @@ jobs:
           echo "To rollback manually:"
           echo "1. SSH to VPS: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           echo "2. cd /root/Be-calander"
-          echo "3. docker-compose -f docker-compose.prod.yml pull [previous-tag]"
-          echo "4. docker-compose -f docker-compose.prod.yml up -d"
+          echo "3. docker compose -f docker-compose.prod.yml pull [previous-tag]"
+          echo "4. docker compose -f docker-compose.prod.yml up -d"
