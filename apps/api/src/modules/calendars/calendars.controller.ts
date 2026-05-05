@@ -1,7 +1,29 @@
-import { Controller, Get, Post, Put, Patch, Delete, Body, Param, ParseIntPipe, UseGuards, Request } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Put,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { CalendarsService } from './calendars.service';
 import { CalendarDto } from './dto/calendar.dto';
 import { JwtAuthGuard, RolesGuard, RoleEnum, Roles } from '@app/common';
+import { UpdateCalendarDto } from './dto/update-calendar.dto';
+
+interface AuthUser {
+  id: number;
+  role: string;
+}
+
+interface RequestWithUser {
+  user: AuthUser;
+}
 
 @Controller('calendars')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -16,32 +38,38 @@ export class CalendarsController {
 
   @Roles(RoleEnum.USER)
   @Get('user')
-  findAllForUser(@Request() req) {
+  findAllForUser(@Request() req: RequestWithUser) {
     return this.calendarsService.findAllForUser(req.user.id);
   }
 
   @Roles(RoleEnum.ADMIN, RoleEnum.USER)
   @Post('')
-  create(@Request() req, @Body() calendarDto: CalendarDto) {
+  create(@Request() req: RequestWithUser, @Body() calendarDto: CalendarDto) {
     return this.calendarsService.createWithRules(req.user, calendarDto);
   }
 
   @Roles(RoleEnum.ADMIN, RoleEnum.USER)
   @Patch(':id/status')
   updateStatus(
-    @Request() req,
+    @Request() req: RequestWithUser,
     @Param('id', ParseIntPipe) id: number,
     @Body('status') status: string,
-    @Body('file_id') file_id?: number
+    @Body('file_id') file_id?: number,
   ) {
     return this.calendarsService.updateStatus(id, req.user, status, file_id);
   }
 
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() calendarDto: CalendarDto) {
-    return this.calendarsService.update(id, calendarDto);
+  update(
+    @Request() req: RequestWithUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() calendarDto: UpdateCalendarDto,
+  ) {
+    return this.calendarsService.update(id, req.user, calendarDto);
   }
 
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.calendarsService.remove(id);

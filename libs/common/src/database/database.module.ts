@@ -1,6 +1,14 @@
 import { Module } from '@nestjs/common';
 import { SequelizeModule } from '@nestjs/sequelize';
-import { User, Todo, Team, Calendar, Role, UserTeamRole, FileModel } from '../models';
+import {
+  User,
+  Todo,
+  Team,
+  Calendar,
+  Role,
+  UserTeamRole,
+  FileModel,
+} from '../models';
 import * as dotenv from 'dotenv';
 
 import * as fs from 'fs';
