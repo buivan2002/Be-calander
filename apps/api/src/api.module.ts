@@ -5,6 +5,8 @@ import { TodosModule } from './modules/todos/todos.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { CalendarsModule } from './modules/calendars/calendars.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { LifecycleTestModule } from './modules/lifecycle-test/lifecycle-test.module';
+import { UsersModule } from './modules/users/users.module';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 @Module({
@@ -15,6 +17,8 @@ import { join } from 'path';
     TeamsModule,
     CalendarsModule,
     UploadModule,
+    LifecycleTestModule,
+    UsersModule,
     ServeStaticModule.forRoot({
       // 1. Thay __dirname bằng process.cwd()
       rootPath: join(process.cwd(), 'uploads'), 
