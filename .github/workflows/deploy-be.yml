@@ -190,10 +190,12 @@ jobs:
             # 2. Clean up stale/ghost containers
             # ========================================
             echo "🧹 Cleaning up stale containers..."
-            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+            docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
             docker rm -f calendar_db_prod calendar_backend 2>/dev/null || true
             # Remove ghost containers with hash-prefixed names (left by docker-compose v1)
-            docker ps -a --filter "name=calendar" -q | xargs -r docker rm -f 2>/dev/null || true
+            # ⚠️ Chỉ xóa container backend (calendar_db, calendar_backend), KHÔNG xóa frontend-calendar
+            docker ps -a --filter "name=calendar_db" -q | xargs -r docker rm -f 2>/dev/null || true
+            docker ps -a --filter "name=calendar_backend" -q | xargs -r docker rm -f 2>/dev/null || true
 
             # ========================================
             # 3. Pull latest image từ Docker Hub
