@@ -187,7 +187,16 @@ jobs:
             export BACKEND_PORT="${{ secrets.BACKEND_PORT || '3100' }}"
 
             # ========================================
-            # 2. Pull latest image từ Docker Hub
+            # 2. Clean up stale/ghost containers
+            # ========================================
+            echo "🧹 Cleaning up stale containers..."
+            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+            docker rm -f calendar_db_prod calendar_backend 2>/dev/null || true
+            # Remove ghost containers with hash-prefixed names (left by docker-compose v1)
+            docker ps -a --filter "name=calendar" -q | xargs -r docker rm -f 2>/dev/null || true
+
+            # ========================================
+            # 3. Pull latest image từ Docker Hub
             # ========================================
             echo "📥 Pulling latest backend image..."
             docker pull ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG || {
@@ -197,7 +206,7 @@ jobs:
             docker-compose -f docker-compose.prod.yml pull
 
             # ========================================
-            # 3. Khởi động DB trước (backend cần DB để migrate)
+            # 4. Khởi động DB trước (backend cần DB để migrate)
             # ========================================
             echo "🗄️  Starting DB service first..."
             docker-compose -f docker-compose.prod.yml up -d db
@@ -216,7 +225,7 @@ jobs:
             done
 
             # ========================================
-            # 4. Chạy migration — MỌI LẦN DEPLOY (tự bỏ qua file đã chạy)
+            # 5. Chạy migration — MỌI LẦN DEPLOY (tự bỏ qua file đã chạy)
             # Khi bạn thêm migration mới vào code → push → CI tự pick up và chạy
             # ========================================
             echo "🗃️  Running db:migrate..."
@@ -229,7 +238,7 @@ jobs:
             echo "✅ Migrations completed"
 
             # ========================================
-            # 5. Start/Restart toàn bộ services
+            # 6. Start/Restart toàn bộ services
             # ========================================
             echo "🚀 Starting all services..."
             docker-compose -f docker-compose.prod.yml down --remove-orphans
@@ -239,7 +248,7 @@ jobs:
             sleep 10
 
             # ========================================
-            # 6. Verify deployment
+            # 7. Verify deployment
             # ========================================
             echo "✅ Verifying services..."
             docker-compose -f docker-compose.prod.yml ps
