@@ -1,5 +1,13 @@
 import { Type } from 'class-transformer';
-import { IsDateString, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsDateString,
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
 export class UpdateCalendarDto {
   @IsString()
@@ -21,6 +29,25 @@ export class UpdateCalendarDto {
   @IsString()
   @IsOptional()
   status?: string | null;
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  @IsOptional()
+  progress_percent?: number | null;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  estimate_hours?: number | null;
+
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  actual_hours?: number | null;
 
   @Type(() => Number)
   @IsInt()

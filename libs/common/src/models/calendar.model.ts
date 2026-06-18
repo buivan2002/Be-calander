@@ -20,6 +20,23 @@ export class Calendar extends Model {
   @Column(DataType.STRING)
   status: string;
 
+  @Column({
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  progress_percent: number;
+
+  @Column(DataType.DECIMAL(6, 2))
+  estimate_hours: number | null;
+
+  @Column({
+    type: DataType.DECIMAL(6, 2),
+    allowNull: false,
+    defaultValue: 0,
+  })
+  actual_hours: number;
+
   @ForeignKey(() => User)
   @Column(DataType.INTEGER)
   user_id: number;

@@ -8,6 +8,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -40,6 +41,26 @@ export class CalendarsController {
   @Get('user')
   findAllForUser(@Request() req: RequestWithUser) {
     return this.calendarsService.findAllForUser(req.user.id);
+  }
+
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
+  @Get('assignees')
+  findPermittedAssignees(@Request() req: RequestWithUser) {
+    return this.calendarsService.findPermittedAssignees(req.user);
+  }
+
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
+  @Get('workload')
+  findWeeklyWorkload(
+    @Request() req: RequestWithUser,
+    @Query('user_id', ParseIntPipe) userId: number,
+    @Query('week_start') weekStart: string,
+  ) {
+    return this.calendarsService.findWeeklyWorkload(
+      req.user,
+      userId,
+      weekStart,
+    );
   }
 
   @Roles(RoleEnum.ADMIN, RoleEnum.USER)
