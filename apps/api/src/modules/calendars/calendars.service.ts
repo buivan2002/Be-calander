@@ -100,7 +100,18 @@ export class CalendarsService {
     return userTeams.map((ut) => Number(ut.team_id)).filter(Boolean);
   }
 
-  private async assertCanViewUserWorkload(user: AuthUser, targetUserId: number) {
+  private parseOptionalUserId(userId?: string) {
+    if (userId === undefined || userId === '') return null;
+
+    const parsed = Number(userId);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      throw new BadRequestException('user_id không hợp lệ');
+    }
+
+    return parsed;
+  }
+
+  private async assertCanViewUser(user: AuthUser, targetUserId: number) {
     if (this.isAdmin(user)) return;
     if (user.id === targetUserId) return;
 
@@ -126,14 +137,32 @@ export class CalendarsService {
     return Calendar.findAll({ include: [{ model: FileModel }] });
   }
 
-  async findAllForUser(userId: number) {
-    const teamIds = await this.getUserTeamIds(userId);
+  async findAllForUser(user: AuthUser, userId?: string) {
+    const targetUserId = this.parseOptionalUserId(userId);
 
+    if (targetUserId) {
+      await this.assertCanViewUser(user, targetUserId);
+
+      return Calendar.findAll({
+        where: {
+          [Op.or]: [{ user_id: targetUserId }, { assigner_id: targetUserId }],
+        },
+        include: [{ model: FileModel }],
+        raw: true,
+        nest: true,
+      });
+    }
+
+    if (this.isAdmin(user)) {
+      return this.findAllForAdmin();
+    }
+
+    const teamIds = await this.getUserTeamIds(user.id);
     return Calendar.findAll({
       where: {
         [Op.or]: [
-          { user_id: userId },
-          { assigner_id: userId },
+          { user_id: user.id },
+          { assigner_id: user.id },
           { assigner_id: null, team_id: { [Op.in]: teamIds } },
         ],
       },
@@ -176,7 +205,7 @@ export class CalendarsService {
   }
 
   async findWeeklyWorkload(user: AuthUser, targetUserId: number, weekStart: string) {
-    await this.assertCanViewUserWorkload(user, targetUserId);
+    await this.assertCanViewUser(user, targetUserId);
 
     const targetUser = await User.findByPk(targetUserId, {
       attributes: ['id', 'name', 'email', 'role'],

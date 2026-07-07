@@ -37,10 +37,13 @@ export class CalendarsController {
     return this.calendarsService.findAllForAdmin();
   }
 
-  @Roles(RoleEnum.USER)
+  @Roles(RoleEnum.ADMIN, RoleEnum.USER)
   @Get('user')
-  findAllForUser(@Request() req: RequestWithUser) {
-    return this.calendarsService.findAllForUser(req.user.id);
+  findAllForUser(
+    @Request() req: RequestWithUser,
+    @Query('user_id') userId?: string,
+  ) {
+    return this.calendarsService.findAllForUser(req.user, userId);
   }
 
   @Roles(RoleEnum.ADMIN, RoleEnum.USER)

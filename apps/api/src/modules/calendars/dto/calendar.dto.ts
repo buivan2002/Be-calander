@@ -27,6 +27,10 @@ export class CalendarDto {
   @IsNotEmpty()
   end_time: Date;
 
+  @IsString()
+  @IsOptional()
+  status?: string;
+
   @Type(() => Number)
   @IsInt()
   @Min(0)
