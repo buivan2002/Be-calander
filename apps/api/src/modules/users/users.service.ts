@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { User } from '@app/common';
 import * as argon2 from 'argon2';
 import { CreateAdminDto } from './dto/create-admin.dto';
@@ -42,5 +47,23 @@ export class UsersService {
         role: newAdmin.role,
       },
     };
+  }
+
+  async upgradeAdminByEmail(email: string) {
+    const user = await User.findOne({
+      where: { email },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy tài khoản');
+    }
+
+    if (user.role === 'admin') {
+      return 'b đã là admin';
+    }
+
+    await user.update({ role: 'admin' });
+
+    return 'nâng cấp admin thành công';
   }
 }

@@ -53,6 +53,11 @@ export class CalendarsService {
 
   private readonly adminOnlyFields = ['team_id', 'assigner_id'] as const;
 
+  private readonly calendarIncludes = [
+    { model: FileModel },
+    { model: User, as: 'assignee', attributes: ['id', 'name', 'email', 'role'] },
+  ];
+
   private toPlainCalendar(calendar: Calendar): unknown {
     return calendar.get({ plain: true }) as unknown;
   }
@@ -134,7 +139,7 @@ export class CalendarsService {
   }
 
   async findAllForAdmin() {
-    return Calendar.findAll({ include: [{ model: FileModel }] });
+    return Calendar.findAll({ include: this.calendarIncludes });
   }
 
   async findAllForUser(user: AuthUser, userId?: string) {
@@ -145,9 +150,9 @@ export class CalendarsService {
 
       return Calendar.findAll({
         where: {
-          [Op.or]: [{ user_id: targetUserId }, { assigner_id: targetUserId }],
+          assigner_id: targetUserId,
         },
-        include: [{ model: FileModel }],
+        include: this.calendarIncludes,
         raw: true,
         nest: true,
       });
@@ -158,15 +163,19 @@ export class CalendarsService {
     }
 
     const teamIds = await this.getUserTeamIds(user.id);
+    const permittedUsers = await this.findPermittedAssignees(user);
+    const permittedUserIds = permittedUsers
+      .map((permittedUser) => Number(permittedUser.id))
+      .filter(Boolean);
+
     return Calendar.findAll({
       where: {
         [Op.or]: [
-          { user_id: user.id },
-          { assigner_id: user.id },
+          { assigner_id: { [Op.in]: permittedUserIds } },
           { assigner_id: null, team_id: { [Op.in]: teamIds } },
         ],
       },
-      include: [{ model: FileModel }],
+      include: this.calendarIncludes,
       raw: true,
       nest: true,
     });
@@ -223,7 +232,7 @@ export class CalendarsService {
           [Op.gte]: start,
           [Op.lt]: endExclusive,
         },
-        [Op.or]: [{ assigner_id: targetUserId }, { user_id: targetUserId }],
+        assigner_id: targetUserId,
       },
       order: [['start_time', 'ASC']],
       raw: true,
@@ -293,7 +302,7 @@ export class CalendarsService {
       if (!payload.user_id) payload.user_id = user.id;
     } else {
       payload.user_id = user.id;
-      payload.assigner_id = null;
+      payload.assigner_id = user.id;
       payload.team_id = null;
     }
 
