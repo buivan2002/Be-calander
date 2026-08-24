@@ -57,4 +57,9 @@ export class CalendarDto {
   @IsInt()
   @IsOptional()
   assigner_id?: number;
+
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  file_id?: number | null;
 }
