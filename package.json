@@ -24,6 +24,7 @@
     "migration:undo:all": "sequelize-cli db:migrate:undo:all",
     "seed:run": "sequelize-cli db:seed:all",
     "docker:build": "docker build -t calendar-api:latest .",
+    "docker:build:dev": "docker build -t calendar-backend:dev .",
     "docker:run": "docker-compose up -d",
     "docker:stop": "docker-compose down",
     "docker:logs": "docker-compose logs -f backend"
