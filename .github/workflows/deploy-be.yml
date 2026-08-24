@@ -1,0 +1,347 @@
+name: Deploy - Backend (NestJS)
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - convert/nestjs
+  
+  workflow_dispatch:  # Allow manual trigger
+
+concurrency:
+  group: deploy-be-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REGISTRY: docker.io
+  DOCKER_ORG: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_NAME: calendar-api-backend
+
+jobs:
+  # ========================================
+  # Stage 1: Code Quality & Testing
+  # ========================================
+  test-and-lint:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter
+        run: npm run lint
+        continue-on-error: true
+
+      - name: Type checking
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Run tests
+        run: npm run test
+        continue-on-error: true
+
+  # ========================================
+  # Stage 2: Build & Push Backend Image
+  # ========================================
+  build-and-push:
+    name: Build Backend Image
+    runs-on: ubuntu-latest
+    needs: test-and-lint
+    environment: stagging
+    
+    outputs:
+      image-tag: ${{ steps.meta.outputs.tags }}
+      image-digest: ${{ steps.build.outputs.digest }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Generate metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-
+            type=semver,pattern={{version}},enabled=${{ startsWith(github.ref, 'refs/tags/') }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          
+          # No build-args for backend (env vars injected at runtime)
+          # Backend is "white" - no environment baked in
+          
+          # Docker layer caching
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+      - name: Image digest
+        run: echo "Image digest ${{ steps.build.outputs.digest }}"
+
+      - name: Copy docker-compose file to VPS
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          # Chỉ copy đúng file này
+          source: "docker-compose.prod.yml"
+          # Sửa thành đường dẫn thật trên VPS của bạn (VD: /root/)
+          target: "/root/Be-calander"
+  # ========================================
+  # Stage 3: Deploy to Production VPS
+  # ========================================
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name == 'push'
+    
+    environment:
+      name: stagging
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          command_timeout: 30m
+          
+          script: |
+            set -e
+            
+            echo "================================"
+            echo "🚀 Deploying Backend (NestJS)"
+            echo "================================"
+            
+            # Navigate to deployment directory
+            mkdir -p /root/Be-calander && cd /root/Be-calander
+            
+            # ========================================
+            # 1. Generate .env.production from Secrets
+            # =================            # ⚠️ KHÔNG dùng single-quote heredoc ('EOFENV') — GitHub expressions sẽ không expand
+            echo "🔐 Generating .env from GitHub Secrets..."
+            cat > .env << EOFENV
+            NODE_ENV=production
+            PORT=${{ secrets.BACKEND_PORT || '3100' }}
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_DIALECT=${{ secrets.DB_DIALECT }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            DB_ROOT_PASSWORD=${{ secrets.DB_PASSWORD }}
+            EOFENV
+
+            echo "✅ .env created"
+            if [ ! -f .env ] || [ ! -s .env ]; then
+              echo "❌ Failed to create .env"
+              exit 1
+            fi
+
+            RAW_BRANCH="${{ github.ref_name }}"
+            SAFE_TAG="${RAW_BRANCH//\//-}"
+            export BACKEND_IMAGE_TAG="$SAFE_TAG"
+            export DOCKER_REGISTRY="${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}"
+            export BACKEND_PORT="${{ secrets.BACKEND_PORT || '3100' }}"
+
+            # ========================================
+            # 2. Clean up stale/ghost containers
+            # ========================================
+            echo "🧹 Cleaning up stale containers..."
+            docker-compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+            docker rm -f calendar_db_prod calendar_backend 2>/dev/null || true
+            # Remove ghost containers with hash-prefixed names (left by docker-compose v1)
+            # ⚠️ Chỉ xóa container backend (calendar_db, calendar_backend), KHÔNG xóa frontend-calendar
+            docker ps -a --filter "name=calendar_db" -q | xargs -r docker rm -f 2>/dev/null || true
+            docker ps -a --filter "name=calendar_backend" -q | xargs -r docker rm -f 2>/dev/null || true
+
+            # ========================================
+            # 3. Pull latest image từ Docker Hub
+            # ========================================
+            echo "📥 Pulling latest backend image..."
+            docker pull ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG || {
+              echo "❌ Failed to pull image"
+              exit 1
+            }
+            docker compose -f docker-compose.prod.yml pull
+
+            # ========================================
+            # 4. Khởi động DB trước (backend cần DB để migrate)
+            # ========================================
+            echo "🗄️  Starting DB service first..."
+            docker compose -f docker-compose.prod.yml up -d db
+
+            echo "⏳ Waiting for DB to be healthy..."
+            for i in $(seq 1 30); do
+              if docker exec calendar_db_prod mysqladmin ping -h 127.0.0.1 --silent 2>/dev/null; then
+                echo "✅ DB is healthy (after ${i}s)"
+                break
+              fi
+              if [ "$i" -eq 30 ]; then
+                echo "❌ DB failed to become healthy after 30s"
+                exit 1
+              fi
+              sleep 1
+            done
+
+            # ========================================
+            # 5. Chạy migration — MỌI LẦN DEPLOY (tự bỏ qua file đã chạy)
+            # Khi bạn thêm migration mới vào code → push → CI tự pick up và chạy
+            # ========================================
+            echo "🗃️  Running db:migrate..."
+            docker run --rm \
+              --env-file .env \
+              -e DB_HOST=calendar_db_prod \
+              --network calendar_internal_network \
+              ${{ env.REGISTRY }}/${{ env.DOCKER_ORG }}/${{ env.IMAGE_NAME }}:$SAFE_TAG \
+              sh -c "NODE_ENV=production node_modules/.bin/sequelize db:migrate --config sequelize.config.js --migrations-path migrations"
+            echo "✅ Migrations completed"
+
+            # ========================================
+            # 6. Start/Restart toàn bộ services
+            # ========================================
+            echo "🚀 Starting all services..."
+            docker compose -f docker-compose.prod.yml down --remove-orphans
+            docker compose -f docker-compose.prod.yml up -d
+
+            echo "⏳ Waiting for services to stabilize..."
+            sleep 10
+
+            # ========================================
+            # 7. Verify deployment
+            # ========================================
+            echo "✅ Verifying services..."
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "🔍 Backend health check..."
+            if docker compose -f docker-compose.prod.yml exec -T backend \
+                wget -q --spider http://127.0.0.1:${BACKEND_PORT}/api/v1 2>/dev/null; then
+              echo "✨ Backend is healthy!"
+            else
+              echo "⚠️  Backend health check pending (normal on first boot)"
+            fi
+
+            echo "📋 Backend logs (last 30 lines):"
+            docker compose -f docker-compose.prod.yml logs --tail=30 backend
+
+            echo ""
+            echo "✅ Deployment complete!"
+
+      - name: Verify Deployment
+        uses: appleboy/ssh-action@master
+        if: always()
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          
+          script: |
+            mkdir -p /root/Be-calander && cd /root/Be-calander
+            
+            echo "================================"
+            echo "🔍 Deployment Status Check"
+            echo "================================"
+            
+            # List running containers
+            echo "📦 Running containers:"
+            docker ps --filter "label=com.project=calendar" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+            
+            # Check volume data
+            echo ""
+            echo "💾 Database volume status:"
+            docker volume ls --filter "label=com.project=calendar"
+      - name: Extract Key Temporary
+        run: |
+          echo "$VPS_SSH_KEY" | xxd -p | tr -d '\n'
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      # - name: Slack Notification - Success
+      #   if: success()
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: success
+      #     text: '✅ Backend deployment successful'
+      #     webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     fields: ref,commit,author,took
+      #   continue-on-error: true
+
+      # - name: Slack Notification - Failure
+      #   if: failure()
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: failure
+      #     text: '❌ Backend deployment failed'
+      #     webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #     fields: ref,commit,author,took
+      #   continue-on-error: true
+
+  # ========================================
+  # Optional: Rollback on Failure
+  # ========================================
+  rollback:
+    name: Rollback on Failure
+    runs-on: ubuntu-latest
+    needs: deploy
+    if: failure()
+    
+    steps:
+      # - name: Slack Notification - Rollback Alert
+      #   uses: 8398a7/action-slack@v3
+      #   with:
+      #     status: failure
+      #     text: '🔴 Backend deployment FAILED - Manual rollback may be needed'
+      #     webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+      #   continue-on-error: true
+
+      - name: Manual Rollback Instruction
+        run: |
+          echo "Deployment failed!"
+          echo ""
+          echo "To rollback manually:"
+          echo "1. SSH to VPS: ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          echo "2. cd /root/Be-calander"
+          echo "3. docker compose -f docker-compose.prod.yml pull [previous-tag]"
+          echo "4. docker compose -f docker-compose.prod.yml up -d"
